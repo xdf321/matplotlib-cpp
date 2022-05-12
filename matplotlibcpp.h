@@ -103,6 +103,8 @@ struct _interpreter {
     PyObject *s_python_function_subplots_adjust;
     PyObject *s_python_function_rcparams;
     PyObject *s_python_function_spy;
+    PyObject *s_python_function_style;
+    PyObject *s_python_function_style_use;
 
     /* For now, _interpreter is implemented as a singleton since its currently not possible to have
        multiple independent embedded python interpreters without patching the python source code
@@ -277,7 +279,9 @@ private:
         s_python_function_colorbar = PyObject_GetAttrString(pymod, "colorbar");
         s_python_function_subplots_adjust = safe_import(pymod,"subplots_adjust");
         s_python_function_rcparams = PyObject_GetAttrString(pymod, "rcParams");
-	s_python_function_spy = PyObject_GetAttrString(pymod, "spy");
+	    s_python_function_spy = PyObject_GetAttrString(pymod, "spy");
+        s_python_function_style = PyObject_GetAttrString(pymod, "style");
+        s_python_function_style_use = PyObject_GetAttrString(s_python_function_style, "use");
 #ifndef WITHOUT_NUMPY
         s_python_function_imshow = safe_import(pymod, "imshow");
 #endif
@@ -2748,6 +2752,25 @@ inline void tight_layout() {
     if (!res) throw std::runtime_error("Call to tight_layout() failed.");
 
     Py_DECREF(res);
+}
+
+inline void style_use(const std::string style_name = "ieee")
+{
+  detail::_interpreter::get();
+
+  // construct positional args
+  PyObject* args;
+  args = PyTuple_New(1);
+  PyTuple_SetItem(args, 0, PyString_FromString(style_name.c_str()));
+
+  PyObject* kwargs = PyDict_New();
+  PyObject* res = PyObject_Call(detail::_interpreter::get().s_python_function_style_use, args, kwargs);
+
+  Py_DECREF(args);
+  Py_DECREF(kwargs);
+  if (!res) throw std::runtime_error("Call to style_use() failed");
+
+  Py_DECREF(res);
 }
 
 // Support for variadic plot() and initializer lists:
